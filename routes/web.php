@@ -1,18 +1,21 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\StudentPostController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TutorController;
 use App\Http\Controllers\TutorProfileController;
+use App\Models\Booking; // Ye lazmi add karein top par
 use App\Models\Message;
+use App\Models\StudentPost;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Models\Booking; // Ye lazmi add karein top par
-use App\Http\Controllers\AdminController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -69,7 +72,10 @@ Route::middleware(['auth', 'prevent-back'])->group(function () {
     Route::get('/tutor/bookings', [BookingController::class, 'tutorBookings']);
     Route::patch('/bookings/{id}', [BookingController::class, 'updateStatus'])->name('bookings.update');
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])->name('bookings.destroy');
-
+    Route::post('/tutors/{tutor}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('/student/posts', [StudentPostController::class, 'store'])->name('student.posts.store');
+    Route::get('/tutor/jobs', [TutorController::class, 'allMatchingJobs'])->name('tutors.jobs');
+    Route::post('/tutor/jobs/ignore/{id}', [App\Http\Controllers\TutorController::class, 'ignoreJob'])->name('tutors.jobs.ignore');
 
 
     Route::get('/dashboard', function () {
@@ -78,61 +84,97 @@ Route::middleware(['auth', 'prevent-back'])->group(function () {
         $totalEarnings = 0;
         $activeCount = 0;
         $recentStudents = collect();
-
-        // --- Naye Variables (Jo humne Blade mein use kiye hain) ---
         $tutorBookings = collect();
         $studentBookings = collect();
+        $matchingPosts = collect();
+        $matchingPostsCount = 0; // Default zero
 
         if ($user->role == 'tutor') {
-            // 1. Aapka purana Bookings aur Earnings logic
+            // 1. Bookings & Earnings Logic
             $bookings = $user->tutorStudents()->with('student')->latest()->get();
             $totalEarnings = $bookings->sum('amount');
             $activeCount = $bookings->where('status', 'active')->count();
 
-            // Naya variable fill kar rahe hain jo Tutor loop ke liye chahiye
             $tutorBookings = Booking::where('tutor_id', $user->id)
                 ->with('student')
                 ->latest()
                 ->get();
 
-            // 2. Recent Inquiries (Messages) - Purana Logic
+            // 2. Recent Inquiries (Messages)
             $recentStudents = Message::where('receiver_id', $user->id)
                 ->with('sender')
                 ->latest()
                 ->take(5)
                 ->get();
 
-            // 3. Profile Status Calculation - Purana Logic
+            // 3. Profile & Matching Posts Logic
             $profile = $user->tutorProfile;
             $status = 0;
+
             if ($profile) {
+                // Profile Status Calculation
                 if ($profile->bio)
                     $status += 40;
                 if ($profile->hourly_rate)
                     $status += 30;
                 if ($user->availabilitySlots()->count() > 0)
                     $status += 30;
+
+                // Keywords Extraction
+                $keywords = collect(explode(',', $profile->expertise . ',' . $profile->title))
+                    ->map(fn($item) => trim(strtolower($item)))
+                    ->filter()
+                    ->unique();
+
+                if ($keywords->isNotEmpty()) {
+                    // Pehle Ignored Posts ki IDs nikalon taake counter sahi ho jaye
+                    $ignoredPostIds = DB::table('ignored_posts')
+                        ->where('user_id', $user->id)
+                        ->pluck('student_post_id');
+
+                    // Naya Counter Logic (Jo ignore nahi hui unka count)
+                    $matchingPostsCount = StudentPost::whereNotIn('id', $ignoredPostIds)
+                        ->where(function ($query) use ($keywords) {
+                            foreach ($keywords as $keyword) {
+                                $query->orWhere('description', 'LIKE', "%{$keyword}%")
+                                    ->orWhere('title', 'LIKE', "%{$keyword}%");
+                            }
+                        })->count();
+
+                    // Dashboard ke loop ke liye posts (Agar tum loop abhi bhi dashboard pe rakhte ho)
+                    $matchingPosts = StudentPost::with('user')
+                        ->whereNotIn('id', $ignoredPostIds)
+                        ->where(function ($query) use ($keywords) {
+                            foreach ($keywords as $keyword) {
+                                $query->orWhere('description', 'LIKE', "%{$keyword}%")
+                                    ->orWhere('title', 'LIKE', "%{$keyword}%");
+                            }
+                        })
+                        ->latest()
+                        ->get();
+                }
             }
             $data['profile_status'] = $status;
 
         } else {
-            // Agar role student hai, toh uski bookings nikal lo
+            // 4. Student Role Logic
             $studentBookings = Booking::where('student_id', $user->id)
                 ->with('tutor')
                 ->latest()
                 ->get();
         }
 
-        // Saare purane aur naye variables compact mein bhej diye hain
         return view('dashboard', compact(
             'totalEarnings',
             'activeCount',
             'recentStudents',
             'data',
             'tutorBookings',
-            'studentBookings'
+            'studentBookings',
+            'matchingPosts',
+            'matchingPostsCount'
         ));
-    })->middleware(['auth', 'verified'])->name('dashboard');
+    })->middleware(['auth', 'verified', 'prevent-back'])->name('dashboard');
 
     Route::post('/subjects', [SubjectController::class, 'store']);
 });

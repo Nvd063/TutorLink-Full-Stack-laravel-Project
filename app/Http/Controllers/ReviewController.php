@@ -4,49 +4,34 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Review;
-use App\Models\User;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-    
-
-    // Add new review
     public function store(Request $request)
     {
         $request->validate([
-            'tutor_id'=>'required|exists:users,id',
-            'rating'=>'required|integer|min:1|max:5',
-            'comment'=>'nullable|string'
+            'tutor_id' => 'required|exists:users,id',
+            'rating'   => 'required|integer|min:1|max:5',
+            'comment'  => 'nullable|string|max:1000',
         ]);
 
-        $review = Review::updateOrCreate(
-            [
-                'student_id'=>auth()->id(),
-                'tutor_id'=>$request->tutor_id
-            ],
-            [
-                'rating'=>$request->rating,
-                'comment'=>$request->comment
-            ]
-        );
+        // Check if student already reviewed this tutor
+        $existingReview = Review::where('student_id', Auth::id())
+                                ->where('tutor_id', $request->tutor_id)
+                                ->first();
 
-        return response()->json(['message'=>'Review added/updated','review'=>$review]);
+        if ($existingReview) {
+            return back()->with('error', 'You have already reviewed this tutor.');
+        }
+
+        Review::create([
+            'student_id' => Auth::id(),
+            'tutor_id'   => $request->tutor_id,
+            'rating'     => $request->rating,
+            'comment'    => $request->comment,
+        ]);
+
+        return back()->with('success', 'Thank you! Your review has been submitted successfully.');
     }
-
-    // Fetch all reviews for a tutor
-    public function tutorReviews($tutor_id)
-{
-    // Pehle sirf check karein ke user exist karta hai ya nahi
-    $tutor = User::findOrFail($tutor_id);
-
-    // Reviews fetch karein
-    $reviews = Review::where('tutor_id', $tutor_id)->with('student')->get();
-
-    return response()->json([
-        'tutor_name' => $tutor->name,
-        'reviews' => $reviews
-    ]);
-}
-
 }

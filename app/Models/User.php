@@ -90,10 +90,10 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'student_id');
     }
 
-    public function reviewsReceived()
-    {
-        return $this->hasMany(Review::class, 'tutor_id');
-    }
+    // public function reviewsReceived()
+    // {
+    //     return $this->hasMany(Review::class, 'tutor_id');
+    // }
     public function unreadMessagesCount()
     {
         return Message::where('receiver_id', $this->id)
@@ -126,5 +126,10 @@ class User extends Authenticatable
     public function tutorBookings()
     {
         return $this->hasMany(Booking::class, 'tutor_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'tutor_id');
     }
 }
