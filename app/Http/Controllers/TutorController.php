@@ -15,15 +15,19 @@ class TutorController extends Controller
             ->where('is_verified', true)
             ->whereNull('rejection_reason');
 
+        // Subject filter
         if ($request->filled('subject')) {
             $subject = $request->subject;
             $query->whereHas('tutorProfile', function ($q) use ($subject) {
-                $q->where('expertise', 'LIKE', "%{$subject}%")
-                    ->orWhere('bio', 'LIKE', "%{$subject}%")
-                    ->orWhere('title', 'LIKE', "%{$subject}%");
+                $q->where(function ($inner) use ($subject) {
+                    $inner->where('expertise', 'LIKE', "%{$subject}%")
+                        ->orWhere('bio', 'LIKE', "%{$subject}%")
+                        ->orWhere('title', 'LIKE', "%{$subject}%");
+                });
             });
         }
 
+        // Price filter
         if ($request->filled('max_price')) {
             $query->whereHas('tutorProfile', function ($q) use ($request) {
                 $q->where('hourly_rate', '<=', $request->max_price);
@@ -32,7 +36,39 @@ class TutorController extends Controller
 
         $tutors = $query->with('tutorProfile')->latest()->get();
 
-        if ($request->ajax() || $request->wantsJson()) {
+        // 🔥 AI Smart Match Score
+        $tutors = $tutors->map(function ($tutor) use ($request) {
+            $score = 0;
+            $profile = $tutor->tutorProfile;
+
+            if ($profile) {
+                if ($request->filled('subject')) {
+                    $sub = strtolower($request->subject);
+                    if (
+                        str_contains(strtolower($profile->expertise ?? ''), $sub) ||
+                        str_contains(strtolower($profile->bio ?? ''), $sub)
+                    ) {
+                        $score += 40;
+                    }
+                }
+                if ($request->filled('max_price')) {
+                    if ($profile->hourly_rate <= $request->max_price) {
+                        $score += 30;
+                    }
+                }
+                if ($profile->experience >= 5)
+                    $score += 30;
+                elseif ($profile->experience >= 2)
+                    $score += 15;
+            }
+
+            $tutor->match_score = $score > 0 ? $score : null;
+            return $tutor;
+        });
+
+        $tutors = $tutors->sortByDesc('match_score');
+
+        if ($request->ajax()) {
             return view('tutors.partials.tutor_cards', compact('tutors'))->render();
         }
 

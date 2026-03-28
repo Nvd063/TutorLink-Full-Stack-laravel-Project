@@ -12,7 +12,7 @@ class AdminUserSeeder extends Seeder
 {
     User::create([
         'name' => 'Admin',
-        'email' => 'naveed@admin.com',
+        'email' => 'admin@tutorlink.com',
         'password' => Hash::make('admin123'),
         'role' => 'admin',
         'is_verified' => true,

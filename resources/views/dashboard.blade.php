@@ -25,7 +25,7 @@
                         class="bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-200 flex justify-between items-center">
                         <div>
                             <h3 class="text-2xl font-black italic">Need a Personal Tutor?</h3>
-                            <p class="opacity-80 mt-1">Apni requirement post karein, tutors khud raabta karein gay.</p>
+                            <p class="opacity-80 mt-1">Post your requirements. Tutor will contact you soon.</p>
                         </div>
                         <button @click="showPostModal = true"
                             class="bg-white text-indigo-600 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-100 transition shadow-lg">
@@ -120,10 +120,9 @@
                                     Rejected / Pending</h3>
                                 @if(auth()->user()->rejection_reason)
                                     <p class="text-rose-600 mt-2 font-bold italic">"{{ auth()->user()->rejection_reason }}"</p>
-                                    <p class="text-rose-500 text-xs mt-4">Piyara bhai, upar di gayi wajah ko theek karein aur dobara
-                                        profile update karein.</p>
+                                    <p class="text-rose-500 text-xs mt-4">Kindly read the instructions carefully and create your profile again. Thank you!</p>
                                 @else
-                                    <p class="text-rose-600 mt-1">Aapki application review ho rahi hai. Thora intezar karein.</p>
+                                    <p class="text-rose-600 mt-1">Your application is under review. Please wait!</p>
                                 @endif
                             </div>
                         </div>
@@ -160,8 +159,7 @@
                                 </div>
                                 <h2 class="text-3xl font-black text-slate-900 italic mb-4">Waiting for Approval</h2>
                                 <p class="text-slate-500 leading-relaxed max-w-md mx-auto">
-                                    Bhai, aapki application Admin ko bhej di gayi hai. Hum aapki Degree aur CV verify kar rahe hain.
-                                    Jald hi aapka dashboard unlock ho jayega!
+                                    Dear Tutor, Your application is send to Admin for verification. After verification your dashboard will unlock. Thank you for your patience! 
                                 </p>
                             @endif
                             <div class="mt-8">

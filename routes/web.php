@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AIController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MessageController;
@@ -23,7 +24,7 @@ Route::get('/', function () {
 
 
 // --- PUBLIC ROUTES (No Login Required) ---
-Route::get('/subjects', [SubjectController::class, 'index']);
+Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
 Route::get('/tutors', [TutorController::class, 'index']);
 Route::get('/tutors/search', [TutorController::class, 'search']);
 
@@ -73,9 +74,14 @@ Route::middleware(['auth', 'prevent-back'])->group(function () {
     Route::patch('/bookings/{id}', [BookingController::class, 'updateStatus'])->name('bookings.update');
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])->name('bookings.destroy');
     Route::post('/tutors/{tutor}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    Route::post('/student/posts', [StudentPostController::class, 'store'])->name('student.posts.store');
     Route::get('/tutor/jobs', [TutorController::class, 'allMatchingJobs'])->name('tutors.jobs');
     Route::post('/tutor/jobs/ignore/{id}', [App\Http\Controllers\TutorController::class, 'ignoreJob'])->name('tutors.jobs.ignore');
+    
+    Route::post('/student/posts', [StudentPostController::class, 'store'])->name('student.posts.store');
+    Route::get('/my-posts', [StudentPostController::class, 'myPosts'])->name('student.my-posts');
+    Route::get('/my-posts/{post}/edit', [StudentPostController::class, 'edit'])->name('student.posts.edit');
+    Route::put('/my-posts/{post}', [StudentPostController::class, 'update'])->name('student.posts.update');
+    Route::delete('/my-posts/{post}', [StudentPostController::class, 'destroy'])->name('student.posts.destroy');
 
 
     Route::get('/dashboard', function () {
@@ -203,3 +209,6 @@ Route::middleware(['auth', 'can:admin-access'])->prefix('admin')->name('admin.')
 });
 
 Route::get('/payments', [AdminController::class, 'monitorPayments'])->name('admin.payments.index');
+
+Route::get('/ai-assistant', [AIController::class, 'index'])->name('ai.index');
+Route::post('/ai-assistant/process', [AIController::class, 'process'])->name('ai.process');
