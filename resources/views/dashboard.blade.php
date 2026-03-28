@@ -47,13 +47,13 @@
                         <div class="space-y-4">
                             @forelse($studentBookings as $booking)
                                 <div @click="showDetailModal = true;
-                                                            activeBooking = {
-                                                                id: '{{ $booking->id }}',
-                                                                subject: '{{ addslashes($booking->subject) }}',
-                                                                booking_time: '{{ $booking->booking_time }}',
-                                                                status: '{{ $booking->status }}',
-                                                                rejection_reason: '{{ addslashes($booking->rejection_reason ?? '') }}'
-                                                            }"
+                                                                            activeBooking = {
+                                                                                id: '{{ $booking->id }}',
+                                                                                subject: '{{ addslashes($booking->subject) }}',
+                                                                                booking_time: '{{ $booking->booking_time }}',
+                                                                                status: '{{ $booking->status }}',
+                                                                                rejection_reason: '{{ addslashes($booking->rejection_reason ?? '') }}'
+                                                                            }"
                                     class="p-5 bg-slate-50 rounded-[2rem] flex items-center justify-between border border-transparent hover:border-indigo-100 transition shadow-sm cursor-pointer group">
                                     <div class="flex items-center gap-4">
                                         <div
@@ -75,9 +75,9 @@
                                         </p>
                                         <span
                                             class="text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest
-                                                            {{ $booking->status == 'pending' ? 'bg-amber-100 text-amber-600' : '' }}
-                                                            {{ $booking->status == 'accepted' ? 'bg-emerald-100 text-emerald-600' : '' }}
-                                                            {{ $booking->status == 'rejected' ? 'bg-rose-100 text-rose-600' : '' }}">
+                                                                            {{ $booking->status == 'pending' ? 'bg-amber-100 text-amber-600' : '' }}
+                                                                            {{ $booking->status == 'accepted' ? 'bg-emerald-100 text-emerald-600' : '' }}
+                                                                            {{ $booking->status == 'rejected' ? 'bg-rose-100 text-rose-600' : '' }}">
                                             {{ $booking->status }}
                                         </span>
                                     </div>
@@ -120,7 +120,8 @@
                                     Rejected / Pending</h3>
                                 @if(auth()->user()->rejection_reason)
                                     <p class="text-rose-600 mt-2 font-bold italic">"{{ auth()->user()->rejection_reason }}"</p>
-                                    <p class="text-rose-500 text-xs mt-4">Kindly read the instructions carefully and create your profile again. Thank you!</p>
+                                    <p class="text-rose-500 text-xs mt-4">Kindly read the instructions carefully and create your
+                                        profile again. Thank you!</p>
                                 @else
                                     <p class="text-rose-600 mt-1">Your application is under review. Please wait!</p>
                                 @endif
@@ -159,7 +160,8 @@
                                 </div>
                                 <h2 class="text-3xl font-black text-slate-900 italic mb-4">Waiting for Approval</h2>
                                 <p class="text-slate-500 leading-relaxed max-w-md mx-auto">
-                                    Dear Tutor, Your application is send to Admin for verification. After verification your dashboard will unlock. Thank you for your patience! 
+                                    Dear Tutor, Your application is send to Admin for verification. After verification your
+                                    dashboard will unlock. Thank you for your patience!
                                 </p>
                             @endif
                             <div class="mt-8">
@@ -277,7 +279,7 @@
                                             @else
                                                 <span
                                                     class="px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest
-                                                                                        {{ $booking->status == 'accepted' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-400' }}">
+                                                                                                                                {{ $booking->status == 'accepted' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-400' }}">
                                                     {{ $booking->status }}
                                                 </span>
                                             @endif
@@ -343,29 +345,51 @@
 
     {{-- Tutor Modals (Verified only) --}}
     @if(Auth::user()->role == 'tutor' && Auth::user()->is_verified)
+        {{-- FIXED DECLINE MODAL --}}
+        @if(Auth::user()->role == 'tutor' && Auth::user()->is_verified)
+            <div x-show="showDeclineModal" x-cloak
+                class="fixed inset-0 z-[160] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+                style="display: none;">
 
-        {{-- Decline Modal --}}
-        <div x-show="showDeclineModal" x-cloak
-            class="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-white p-10 rounded-[3rem] shadow-2xl max-w-md w-full border border-slate-100"
-                @click.away="showDeclineModal = false">
-                <h3 class="text-2xl font-black text-slate-900 mb-6 italic text-center tracking-tight">Decline Booking
-                </h3>
-                <form :action="`/bookings/${selectedBooking}`" method="POST" class="space-y-5">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="status" value="rejected">
-                    <textarea name="rejection_reason" required placeholder="Briefly explain why... (e.g. Schedule conflict)"
-                        class="w-full rounded-[2rem] border-none bg-slate-50 p-6 h-40 font-bold focus:ring-4 focus:ring-rose-50 text-slate-700"></textarea>
-                    <div class="flex gap-4">
-                        <button type="button" @click="showDeclineModal = false"
-                            class="flex-1 bg-slate-100 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500">Cancel</button>
-                        <button type="submit"
-                            class="flex-1 bg-rose-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-rose-700 transition">Confirm
-                            Decline</button>
-                    </div>
-                </form>
+                <div class="bg-white p-10 rounded-[3rem] shadow-2xl max-w-md w-full border border-slate-100"
+                    @click.away="showDeclineModal = false">
+
+                    <h3 class="text-2xl font-black text-slate-900 mb-6 italic text-center tracking-tight">
+                        Decline Booking Request
+                    </h3>
+
+                    <form :action="`/bookings/${selectedBooking}`" method="POST" class="space-y-6">
+                        @csrf
+                        @method('PATCH')
+
+                        <input type="hidden" name="status" value="rejected">
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-3">
+                                Why are you declining this booking?
+                            </label>
+                            <textarea name="rejection_reason" required rows="4"
+                                placeholder="Please explain the reason (Student will see this message)..."
+                                class="w-full rounded-2xl border border-slate-200 p-5 focus:ring-4 focus:ring-rose-100 resize-y font-medium"></textarea>
+                        </div>
+
+                        <div class="flex gap-4 pt-2">
+                            <button type="button" @click="showDeclineModal = false"
+                                class="flex-1 bg-slate-100 hover:bg-slate-200 py-4 rounded-2xl font-semibold text-slate-600 transition">
+                                Cancel
+                            </button>
+
+                            <button type="submit"
+                                class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-4 rounded-2xl font-semibold shadow-lg transition">
+                                Confirm Decline
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
+        @endif
+
+
 
         {{-- Upload Modal --}}
         <div x-show="showUploadModal" x-cloak
