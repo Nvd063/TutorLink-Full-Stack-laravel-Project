@@ -16,6 +16,7 @@ use App\Models\Booking; // Ye lazmi add karein top par
 use App\Models\Message;
 use App\Models\StudentPost;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
