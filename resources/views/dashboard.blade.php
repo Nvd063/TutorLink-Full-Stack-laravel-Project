@@ -18,6 +18,7 @@
 
             {{-- ========================= STUDENT SECTION ========================= --}}
             @if(Auth::user()->role == 'student')
+            
 
                 {{-- Student Hero Banner --}}
                 <div class="max-w-5xl mx-auto mb-10">
